@@ -37,6 +37,14 @@ class ItemService:
             raise HTTPException(status_code=404, detail="Item not found")
         self.session.delete(item)
         self.session.commit()
+    
+    async def delete_item_by_name(self, name: str) -> None:
+        statement = select(Item).where(Item.name == name)
+        item = self.session.exec(statement).first()
+        if not item:
+            raise HTTPException(status_code=404, detail="Item not found")
+        self.session.delete(item)
+        self.session.commit()
 
     async def update_item_status(self, item_id: int, in_cubby: bool) -> Item:
         item = self.session.get(Item, item_id)

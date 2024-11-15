@@ -30,22 +30,6 @@ class AlexaRequestController:
             return self.build_response(f"You still have {string_items} in your cubbies. Are you sure you don't need them?")
         return self.build_response("You are all set, goodbye! Have a great day.", True)
 
-    async def handle_add_item_intent(self, item_name):
-        if not item_name:
-            return self.build_response("Sorry, I didn't catch the item name.")
-        await self.item_service.create_item(name=item_name)
-        return self.build_response(f"I have added {item_name} to your list.")
-
-    async def handle_remove_item_intent(self, item_name):
-        if not item_name:
-            return self.build_response("Sorry, I didn't catch the item name.")
-        items = await self.item_service.read_all_items_in_cubby()
-        item = next((i for i in items if i.name == item_name), None)
-        if item:
-            await self.item_service.delete_item(item_id=item.id)
-            return self.build_response(f"I have removed {item_name} from your list.")
-        return self.build_response(f"Could not find {item_name} in your list.")
-
     async def handle_get_items_intent(self):
         items_in_cubby = await self.item_service.read_all_items_in_cubby()
         items_not_in_cubby = await self.item_service.read_all_items_not_in_cubby()
@@ -64,3 +48,20 @@ class AlexaRequestController:
 
     async def handle_help_intent(self):
         return self.build_response("You can ask me to add, remove, or check the status of items in your cubbies.")
+    
+    # async def handle_add_item_intent(self, item_name):
+    #     if not item_name:
+    #         return self.build_response("Sorry, I didn't catch the item name.")
+    #     await self.item_service.create_item(name=item_name)
+    #     return self.build_response(f"I have added {item_name} to your list.")
+
+    # async def handle_remove_item_intent(self, item_name):
+    #     if not item_name:
+    #         return self.build_response("Sorry, I didn't catch the item name.")
+    #     items = await self.item_service.read_all_items_in_cubby()
+    #     item = next((i for i in items if i.name == item_name), None)
+    #     if item:
+    #         await self.item_service.delete_item(item_id=item.id)
+    #         return self.build_response(f"I have removed {item_name} from your list.")
+    #     return self.build_response(f"Could not find {item_name} in your list.")
+

@@ -13,9 +13,10 @@ async def read_root():
 @router.post("/items")
 async def create_item(
     name: str,
+    in_cubby: int | None,
     item_service: ItemService = Depends(get_item_service)
 ):
-    await item_service.create_item(name=name)
+    await item_service.create_item(name=name, cubby_number=in_cubby)
     return {"message": f"Item {name} created"}
 
 @router.delete("/items/{name}")
@@ -23,12 +24,8 @@ async def delete_item(
     name: str,
     item_service: ItemService = Depends(get_item_service)
 ):
-    items = await item_service.read_all_items_in_cubby()
-    item = next((i for i in items if i.name == name), None)
-    if item:
-        await item_service.delete_item(item_id=item.id)
-        return {"message": f"Item {name} deleted"}
-    return {"message": f"Item {name} not found"}
+    await item_service.delete_item_by_name(name)
+    return {"message": f"Item {name} deleted"}
 
 @router.post("/alexa_skill")
 async def handle_alexa_request(
@@ -52,14 +49,15 @@ async def handle_alexa_request(
             return await controller.handle_bye_intent(confirmed=True) 
         elif intent_name == "ByeIntent":
             return await controller.handle_bye_intent()
-        elif intent_name == "AddItemIntent":
-            return await controller.handle_add_item_intent(slot_value)
-        elif intent_name == "RemoveItemIntent":
-            return await controller.handle_remove_item_intent(slot_value)
+
         elif intent_name == "GetItemsIntent":
             return await controller.handle_get_items_intent()
         elif intent_name == "FindItemIntent":
             return await controller.handle_find_item_intent(slot_value)
+        # elif intent_name == "AddItemIntent":
+        #     return await controller.handle_add_item_intent(slot_value)
+        # elif intent_name == "RemoveItemIntent":
+        #     return await controller.handle_remove_item_intent(slot_value)
         else:
             return controller.build_response("Sorry, I didn't understand your intent.")
     else:
