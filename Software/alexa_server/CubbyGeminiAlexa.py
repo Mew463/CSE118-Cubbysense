@@ -1,5 +1,6 @@
 #python3 -m uvicorn CubbyGeminiAlexa:app --reload --port 8080
-#ngrok http 8080
+#ngrok http 8080 #
+#ngrok http --url=complete-primate-simply.ngrok-free.app 8080
 from fastapi import FastAPI, Request
 from pydantic import BaseModel
 import logging
