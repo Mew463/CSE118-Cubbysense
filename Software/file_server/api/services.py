@@ -2,8 +2,8 @@ from fastapi import HTTPException, Depends
 from sqlmodel import Session, select
 from typing import List, Optional
 
-from models import Item
-from db import get_session
+from db.models import Item
+from db.db_utils import get_session
 
 class ItemService:
     def __init__(self, session: Session):
@@ -34,7 +34,7 @@ class ItemService:
     async def delete_item(self, item_id: int) -> None:
         item = self.session.get(Item, item_id)
         if not item:
-            raise HTTPException(status_code=404, detail="Item not found")
+            return False
         self.session.delete(item)
         self.session.commit()
     
@@ -42,33 +42,19 @@ class ItemService:
         statement = select(Item).where(Item.name == name)
         item = self.session.exec(statement).first()
         if not item:
-            raise HTTPException(status_code=404, detail="Item not found")
+            return False
         self.session.delete(item)
         self.session.commit()
 
     async def update_item_status(self, item_id: int, in_cubby: bool) -> Item:
         item = self.session.get(Item, item_id)
         if not item:
-            raise HTTPException(status_code=404, detail="Item not found")
+            return
         item.in_cubby = in_cubby
         self.session.add(item)
         self.session.commit()
         return item
 
-class AlexaRequestService:
-    def __init__(self, session: Session):
-        self.session = session
-
-    async def create_alexa_request(self, request_type: str, intent_name: Optional[str] = None) -> None:
-        alexa_request = AlexaRequest(request_type=request_type, intent_name=intent_name)
-        self.session.add(alexa_request)
-        self.session.commit()
-        self.session.refresh(alexa_request)
-
 # Dependency for ItemService
 def get_item_service(session: Session = Depends(get_session)) -> ItemService:
     return ItemService(session=session)
-
-# Dependency for AlexaRequestService
-def get_alexa_request_service(session: Session = Depends(get_session)) -> AlexaRequestService:
-    return AlexaRequestService(session=session)

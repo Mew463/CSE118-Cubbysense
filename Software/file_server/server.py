@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 import logging
-from db import create_db_and_tables
-from routes import router
+from db.db_utils import create_db_and_tables
+from api.routes import router
 
 # Initialize logging
 logging.basicConfig(level=logging.INFO)
