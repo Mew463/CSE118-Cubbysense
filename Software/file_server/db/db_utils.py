@@ -8,6 +8,7 @@ engine = create_engine(DATABASE_URL, echo=True)
 
 # Create tables if they don't exist
 def create_db_and_tables():
+    # SQLModel.metadata.drop_all(engine)
     SQLModel.metadata.create_all(engine)
 
 # Dependency that provides a new session for each request

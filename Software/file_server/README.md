@@ -1,6 +1,12 @@
 # File Server
 
-## 
+## Starting Server
+
+To start the server, run the following command:
+
+```bash
+cd Software/file_server && uvicorn server:app --reload
+```
 
 ## Endpoints
 
