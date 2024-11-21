@@ -1,2 +1,5 @@
 venv
 .env
+Software/camera_server/coco.names
+Software/camera_server/detected_objects.db
+Software/camera_server/yolov3.weights
