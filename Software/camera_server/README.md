@@ -1,0 +1,1 @@
+Recognized objects are stored in a database. 

@@ -1,6 +1,7 @@
 from fastapi import HTTPException, Depends
 from sqlmodel import Session, select
 from typing import List, Optional
+from sqlalchemy.exc import IntegrityError
 
 from db.models import Item
 from db.db_utils import get_session
@@ -27,24 +28,34 @@ class ItemService:
     async def create_item(self, name: str, cubby_number: Optional[int] = None) -> Item:
         item = Item(name=name, in_cubby=cubby_number)
         self.session.add(item)
-        self.session.commit()
+        try:
+            self.session.commit()
+        except IntegrityError:
+            self.session.rollback()
+            raise HTTPException(status_code=400, detail="Item with this name already exists.")
         self.session.refresh(item)
         return item
 
     async def delete_item(self, item_id: int) -> None:
         item = self.session.get(Item, item_id)
+
         if not item:
             return False
+
         self.session.delete(item)
         self.session.commit()
+        return True
     
     async def delete_item_by_name(self, name: str) -> None:
         statement = select(Item).where(Item.name == name)
         item = self.session.exec(statement).first()
+
         if not item:
             return False
+
         self.session.delete(item)
         self.session.commit()
+        return True
 
     async def update_item_status(self, item_id: int, in_cubby: bool) -> Item:
         item = self.session.get(Item, item_id)
