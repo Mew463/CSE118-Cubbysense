@@ -48,6 +48,14 @@ async def delete_item_by_name(
         raise HTTPException(status_code=404, detail=f"Item with name '{name}' not found")
     return {"message": f"Item '{name}' deleted"}
 
+@router.delete("/items/cubby/{cubby_number}")
+async def delete_items_by_cubby(
+    cubby_number: int,
+    item_service: ItemService = Depends(get_item_service)
+):
+    await item_service.delete_items_by_cubby(cubby_number)
+    return {"message": f"Items in cubby {cubby_number} deleted"}
+
 @router.put("/leds/{id}")
 async def update_led(
     led_data: LEDUpdate,

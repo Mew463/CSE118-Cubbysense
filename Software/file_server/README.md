@@ -112,6 +112,29 @@ Example Response:
 }
 ```
 
+### DELETE /items/cubby/{cubby_number}
+
+Deletes all items in a cubby by its number.
+
+Parameters:
+
+    cubby_number: (int) The number of the cubby to be emptied.
+
+Example Request:
+
+DELETE /items/cubby/1
+
+Response:
+
+    Returns a message confirming the deletion of all items in the cubby.
+
+Example Response:
+```json
+{
+  "message": "Items in cubby 1 deleted"
+}
+```
+
 ### GET /leds
 
 Retrieves the status of all LEDs.

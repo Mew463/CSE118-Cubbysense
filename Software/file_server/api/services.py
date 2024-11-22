@@ -45,6 +45,14 @@ class ItemService:
         self.session.delete(item)
         self.session.commit()
         return True
+
+    async def delete_items_by_cubby(self, cubby_number: int) -> None:
+        statement = select(Item).where(Item.in_cubby == cubby_number)
+        items = self.session.exec(statement).all()
+        for item in items:
+            self.session.delete(item)
+        self.session.commit()
+        return True
     
     async def delete_item_by_name(self, name: str) -> None:
         statement = select(Item).where(Item.name == name)
@@ -65,6 +73,7 @@ class ItemService:
         self.session.add(item)
         self.session.commit()
         return item
+    
 
 class LEDService:
     def __init__(self, session: Session):
