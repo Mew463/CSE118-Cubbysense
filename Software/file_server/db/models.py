@@ -11,3 +11,11 @@ class Item(SQLModel, table=True):
 class ItemCreate(BaseModel):
     item_name: str
     cubby_number: int
+
+class LED(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    color: str
+
+class LEDUpdate(BaseModel):
+    color: str
+    id: int
