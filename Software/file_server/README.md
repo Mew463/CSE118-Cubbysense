@@ -191,3 +191,79 @@ Example Response:
 }
 ```
 
+
+Using SQL:
+
+# PostgreSQL Quick Start Commands
+
+## 1. Start/Stop PostgreSQL
+```bash
+# Start PostgreSQL (Linux/macOS)
+sudo systemctl start postgresql
+
+# Stop PostgreSQL
+sudo systemctl stop postgresql
+
+# Check Status
+sudo systemctl status postgresql
+```
+
+## 2. Access PostgreSQL Command Line Interface (CLI)
+```bash
+# Connect as default `postgres` user
+psql -U postgres
+```
+
+## 3. Create a New Database
+```sql
+-- Inside the `psql` CLI
+CREATE DATABASE my_database;
+```
+
+## 4. List Databases
+```sql
+-- Inside `psql`
+\l
+```
+
+## 5. Switch to a Database
+```sql
+-- Inside `psql`
+\c my_database
+```
+
+## 6. Create a Table
+```sql
+-- Example table creation
+CREATE TABLE users (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(50),
+    email VARCHAR(100)
+);
+```
+
+## 7. Insert Data
+```sql
+-- Insert rows into a table
+INSERT INTO users (name, email) VALUES ('John Doe', 'john@example.com');
+```
+
+## 8. View Data
+```sql
+-- Query all rows
+SELECT * FROM users;
+```
+
+## 9. List Tables
+```sql
+-- Inside `psql`
+\dt
+```
+
+## 10. Exit psql
+```bash
+# Simply type:
+\q
+```
+
+
