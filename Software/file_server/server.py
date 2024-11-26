@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 import logging
-from db.db_utils import create_db_and_tables
+from db.db_utils import create_db_and_tables, seed_leds
 from api.routes import router
 
 # Initialize logging
@@ -16,3 +16,4 @@ app.include_router(router)
 @app.on_event("startup")
 def on_startup():
     create_db_and_tables()
+    seed_leds()

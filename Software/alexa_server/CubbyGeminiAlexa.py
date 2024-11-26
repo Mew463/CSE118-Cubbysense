@@ -1,4 +1,4 @@
-#python3 -m uvicorn CubbyGeminiAlexa:app --reload --port 8080
+#python3 -m uvicorn CubbyGeminiAlexa:app --reload  --host 0.0.0.0 --port 8080
 #ngrok http 8080 #
 #ngrok http --url=complete-primate-simply.ngrok-free.app 8080
 from fastapi import FastAPI, Request
@@ -7,13 +7,14 @@ import logging
 import os
 from dotenv import load_dotenv
 import google.generativeai as genai
+import requests  # Add the HTTP client import
 
 # Configure the Gemini API with the API key
 # Load environment variables from .env file
 load_dotenv()
 # Access the API key
-api_key = os.getenv("API_KEY")
-genai.configure(api_key=api_key) #DO NOT SHARE THIS API KEY
+api_key_str = os.getenv("API_KEY")
+genai.configure(api_key=api_key_str) #DO NOT SHARE THIS API KEY
 
 # Initialize logging
 logging.basicConfig(level=logging.INFO)
@@ -27,6 +28,16 @@ class AlexaRequest(BaseModel):
     session: dict
     request: dict
     context: dict
+
+# Replace the hardcoded itemslist with a function to fetch items
+def fetch_items():
+    try:
+        response = requests.get("http://localhost:8081/items")
+        response.raise_for_status()  # Raise an exception for HTTP errors
+        return response.json()  # Assuming the API returns a JSON array
+    except Exception as e:
+        logger.error(f"Error fetching items: {e}")
+        return []  # Return an empty list if the fetch fails
 
 def build_alexa_response(message):
     return {
@@ -77,7 +88,10 @@ async def handle_alexa_request(request: Request):
                     except KeyError:
                         user_actor = ""  # or set a default value
                     
-                    itemslist = ["scissors", "pencil", "laptop", "pots", "pans", "starbucks card", "car keys", "credit card", "home keys", "passport", "cheatsheet"]
+                    try: 
+                        itemslist = fetch_items()
+                    except Exception as e:
+                        itemslist = ["Default list", "scissors", "pencil", "laptop", "pots", "pans", "starbucks card", "car keys", "credit card", "home keys", "passport", "cheatsheet"]
                     model = genai.GenerativeModel("gemini-1.5-flash")
                     intial_prompt = "Your name is Cubby aka Flash Drive and you are an assistant at home tracking my items. A list of items will be provided."
                     prompt = intial_prompt + ". This is context from Alexa Services: Actor: " + user_actor + ", Direction:" + user_direction + ", Location:" + user_location + ". As an assistant, give suggestions in under 2 sentences. Here is the list of items available:" + str(itemslist)
@@ -90,7 +104,7 @@ async def handle_alexa_request(request: Request):
 
                 except Exception as e:
                     logger.error(f"Error contacting Gemini API: {e}")
-                    return build_alexa_response("Sorry, I had an errory processing your request with Gemini Flash at the moment.")
+                    return build_alexa_response("Sorry, I had an error processing your request with Gemini Flash at the moment.")
                 
             elif intent_name == "GetGeminiFlashEvent":
                 try:
@@ -125,3 +139,16 @@ async def handle_alexa_request(request: Request):
     except Exception as e:
         logger.error(f"Error handling request: {e}")
         return build_alexa_response("Sorry, there was an error processing your request.")
+
+@app.get("/gemini_status")
+async def gemini_status():
+    try:
+        model = genai.GenerativeModel("gemini-1.5-flash")
+        response = model.generate_content(
+            "You are a personal assistant. Respond to this user event."
+        )
+        message = response.text if response.text else "Cubby did not provide a response."
+        return {"status": "success", "message": message}
+    except Exception as e:
+        logger.error(f"Error handling Gemini request: {e}")
+        return {"status": "error", "message": "Gemini service is currently unavailable."}

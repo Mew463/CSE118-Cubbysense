@@ -3,7 +3,7 @@ from sqlmodel import Session, select
 from typing import List, Optional
 from sqlalchemy.exc import IntegrityError
 
-from db.models import Item
+from db.models import Item, LED
 from db.db_utils import get_session
 
 class ItemService:
@@ -45,6 +45,14 @@ class ItemService:
         self.session.delete(item)
         self.session.commit()
         return True
+
+    async def delete_items_by_cubby(self, cubby_number: int) -> None:
+        statement = select(Item).where(Item.in_cubby == cubby_number)
+        items = self.session.exec(statement).all()
+        for item in items:
+            self.session.delete(item)
+        self.session.commit()
+        return True
     
     async def delete_item_by_name(self, name: str) -> None:
         statement = select(Item).where(Item.name == name)
@@ -65,7 +73,48 @@ class ItemService:
         self.session.add(item)
         self.session.commit()
         return item
+    
+
+class LEDService:
+    def __init__(self, session: Session):
+        self.session = session
+
+    async def create_led(self, color: str) -> LED:
+        led = LED(color=color)
+        self.session.add(led)
+        self.session.commit()
+        self.session.refresh(led)
+        return led
+
+    async def read_led(self, id: int) -> LED:
+        led = self.session.get(LED, id)
+        return led
+    
+    async def read_all_leds(self) -> List[LED]:
+        statement = select(LED)
+        results = self.session.exec(statement).all()
+        return results
+
+    async def update_led(self, id: int, color: str) -> LED:
+        led = self.session.get(LED, id)
+        if not led:
+            return None
+        led.color = color
+        self.session.add(led)
+        self.session.commit()
+
+        updated_led = self.session.get(LED, id)
+        return updated_led
+
+    async def delete_led(self, id: int) -> None:
+        led = self.session.get(LED, id)
+        self.session.delete(led)
+        self.session.commit()
 
 # Dependency for ItemService
 def get_item_service(session: Session = Depends(get_session)) -> ItemService:
     return ItemService(session=session)
+
+# Dependency for LEDService
+def get_led_service(session: Session = Depends(get_session)) -> LEDService:
+    return LEDService(session=session)

@@ -1,6 +1,5 @@
-from bluetooth import *
+from Software.ble_server.bluetooth import *
 import asyncio
-import time
 cubby = BLE_UART(peripheral_name='CubbySense', address = 'D381E5F7-AFC1-E128-7309-5C87C3123971')
         
 async def bluetooth_loop():

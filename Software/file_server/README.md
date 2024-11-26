@@ -111,3 +111,83 @@ Example Response:
   "message": "Item 'Key' deleted"
 }
 ```
+
+### DELETE /items/cubby/{cubby_number}
+
+Deletes all items in a cubby by its number.
+
+Parameters:
+
+    cubby_number: (int) The number of the cubby to be emptied.
+
+Example Request:
+
+DELETE /items/cubby/1
+
+Response:
+
+    Returns a message confirming the deletion of all items in the cubby.
+
+Example Response:
+```json
+{
+  "message": "Items in cubby 1 deleted"
+}
+```
+
+### GET /leds
+
+Retrieves the status of all LEDs.
+
+Response:
+
+    Returns a list of LEDs and their status.
+
+Example Response:
+```json
+{
+  "leds": [
+    {"id": 1, "color": "off"},
+    {"id": 2, "color": "green"}
+  ]
+}
+```
+
+### PUT /leds/{id}
+
+Updates the status of an LED by its id.
+
+Parameters:
+
+    id: (int) The id of the LED to be updated.
+
+Body:
+
+    color: (string) The new color of the LED.
+    id: (int) The id of the LED to be updated.
+  
+
+Example Request:
+
+PUT /leds/1
+```json
+{
+  "color": "pink",
+  "id": 1
+}
+```
+
+Response:
+
+    Returns a message confirming the LED's update.
+
+Example Response:
+```json
+{
+    "led": {
+        "id": 1,
+        "color": "pink"
+    }
+}
+```
+
