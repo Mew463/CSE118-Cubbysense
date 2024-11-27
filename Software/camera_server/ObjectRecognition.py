@@ -2,12 +2,16 @@ import cv2
 import numpy as np
 import requests
 from ultralytics import YOLO
+import logging
+
+# Set logging level to WARNING or higher to suppress INFO messages
+logging.getLogger('ultralytics').setLevel(logging.WARNING)
 
 host_ip = "192.168.0.141"
 host_port = "8081"
 
-last_cabinet_objects= []
-cabinet_objects = []
+last_cabinet_objects= [""] * 4
+cabinet_objects = [""] * 4
 
 # Function to add detected objects to the database
 
@@ -16,7 +20,7 @@ def add_or_update_object(label, cubby_index):
         "name": label,
         "in_cubby": cubby_index
     }
-    response = requests.post(url=f"{host_ip}:{host_port}/items", json=current_object)
+    response = requests.post(url=f"http://{host_ip}:{host_port}/items", json=current_object)
     # Check and handle the response
     if response.status_code == 200:
         print("Success:", response.json())
@@ -28,7 +32,7 @@ def add_or_update_object(label, cubby_index):
 
 # Function to delete objects that are no longer detected
 def remove_missing_object(cubby_index):
-    response = requests.delete(f"{host_ip}:{host_port}/items/{cubby_index}")
+    response = requests.delete(f"http://{host_ip}:{host_port}/items/cubby/{cubby_index}")
 
     # Check and handle the response
     if response.status_code == 200:
@@ -38,13 +42,6 @@ def remove_missing_object(cubby_index):
     else:
         print("Error:", response.status_code, response.text)
 
-# Load YOLOv3 model with COCO classes
-YOLO_CONFIG = 'yolov3.cfg'
-YOLO_WEIGHTS = 'yolov3.weights'
-LABELS_FILE = 'coco.names'
-
-with open(LABELS_FILE, 'r') as f:
-    labels = f.read().strip().split('\n')
 
 yolo = YOLO("yolov8s.pt")
 cap = cv2.VideoCapture(0) # 0 for webcam and 1 for external cam 
@@ -73,8 +70,10 @@ while True:
             if box.conf[0] > 0.4:
                 # coordinates
                 [x1, y1, x2, y2] = box.xyxy[0]
+                # print([x1, y1, x2, y2])
                 # convert to int
                 x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)
+                # print(x1, y1, x2, y2)
                 # get the class
                 cls = int(box.cls[0])
                 # get the class name
@@ -85,45 +84,48 @@ while True:
 
                 # put the class name and confidence on the image
                 cv2.putText(image, f'{classes_names[int(box.cls[0])]} {box.conf[0]:.2f}', (x1, y1), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
-                current_objects.append(((classes_names[int(box.cls[0])]), x1, y1, x1-x2, y2-y1))
+                width = x2-x1
+                height = y2-y1
+                current_objects.append(((classes_names[int(box.cls[0])]), x1 + width/2, y1 + height/2, width, height))
                 
+    bottom_left_cabinet_coords = [125, 475]
+    top_right_cabinet_coords = [475, 90]
     
+    cv2.rectangle(image, (bottom_left_cabinet_coords[0], bottom_left_cabinet_coords[1]), (top_right_cabinet_coords[0], top_right_cabinet_coords[1]), (255, 0, 0), 2)
     cv2.imwrite("output_yolo.jpg", image)
 
     # Print detected items
-    print("Detected items:", current_objects)
+    # print("Detected items:", current_objects)
+    
+    object_size_limit = 225
+    mid_cabinet_coords = [(top_right_cabinet_coords[0] + bottom_left_cabinet_coords[0])/2, (bottom_left_cabinet_coords[1] + top_right_cabinet_coords[1])/2]
 
-    bottom_left_cabinet_coords = [100, 600]
-    top_right_cabinet_coords = [600, 100]
-    object_size_limit = 100
-    mid_cabinet_coords = [(top_right_cabinet_coords[0] - bottom_left_cabinet_coords[0])/2, (bottom_left_cabinet_coords[1] - top_right_cabinet_coords[1])/2]
-
-    for object in cabinet_objects: # Make sure to erase the current array of cabinet_objects
-        object = ""
+    cabinet_objects = ["" for _ in cabinet_objects] # Make sure to erase the current array of cabinet_objects
 
     for object in current_objects:
         if (object[3] < object_size_limit and object[4] < object_size_limit): # Make sure the object is not really big 
-
-            if (object[1] < mid_cabinet_coords[0] and object[1] > bottom_left_cabinet_coords[0] and object[2] > mid_cabinet_coords[1] and object[2] < top_right_cabinet_coords[1]): # Check Top left cabinet (from point of view of the camera)
-                cabinet_objects[0] = object
-                print("Item found in slot 1")
-            elif (object[1] > mid_cabinet_coords[0] and object[1] < top_right_cabinet_coords[0] and object[2] > mid_cabinet_coords[1] and object[2] < top_right_cabinet_coords[1]): # Check Top right cabinet (from point of view of the camera)
-                cabinet_objects[1] = object
-                print("Item found in slot 2")
-            elif (object[1] < mid_cabinet_coords[0] and object[1] > bottom_left_cabinet_coords[0] and object[2] < mid_cabinet_coords[1] and object[2] > bottom_left_cabinet_coords[1]): # Check bottom left cabinet (from point of view of the camera)
-                cabinet_objects[2] = object
-                print("Item found in slot 3")
-            elif (object[1] > mid_cabinet_coords[0] and object[1] < top_right_cabinet_coords[0] and object[2] < mid_cabinet_coords[1] and object[2] > bottom_left_cabinet_coords[1]): # Check bottom right cabinet (from point of view of the camera)
-                cabinet_objects[3] = object
-                print("Item found in slot 4")
+            # print(f"{object[1]} {mid_cabinet_coords[0]}  | {object[1]} {top_right_cabinet_coords[0]} | {object[2]} {mid_cabinet_coords[1]} | {object[2]} {top_right_cabinet_coords[1]}")
+            if (object[1] < mid_cabinet_coords[0] and object[1] > bottom_left_cabinet_coords[0] and object[2] < mid_cabinet_coords[1] and object[2] > top_right_cabinet_coords[1]): # Check Top left cabinet (from point of view of the camera)
+                cabinet_objects[0] = object[0]
+                print(f"{object[0]} found in slot 1")
+            elif (object[1] > mid_cabinet_coords[0] and object[1] < top_right_cabinet_coords[0] and object[2] < mid_cabinet_coords[1] and object[2] > top_right_cabinet_coords[1]): # Check Top right cabinet (from point of view of the camera)
+                cabinet_objects[1] = object[0]
+                print(f"{object[0]} found in slot 2")
+            elif (object[1] < mid_cabinet_coords[0] and object[1] > bottom_left_cabinet_coords[0] and object[2] > mid_cabinet_coords[1] and object[2] < bottom_left_cabinet_coords[1]): # Check bottom left cabinet (from point of view of the camera)
+                cabinet_objects[2] = object[0]
+                print(f"{object[0]} found in slot 3")
+            elif (object[1] > mid_cabinet_coords[0] and object[1] < top_right_cabinet_coords[0] and object[2] > mid_cabinet_coords[1] and object[2] < bottom_left_cabinet_coords[1]): # Check bottom right cabinet (from point of view of the camera)
+                cabinet_objects[3] = object[0]
+                print(f"{object[0]} found in slot 4")
 
     for index, object_in_cabinet in enumerate(cabinet_objects):
         if object_in_cabinet != last_cabinet_objects[index]: # Cabinet object changed!!!
             if (object_in_cabinet == ""):
                 remove_missing_object(index)
+                print("removed object from database")
             else: 
-                label = ''   # TODO
-                add_or_update_object(label, index)
+                add_or_update_object(cabinet_objects[index], index)
+                print(f"added {cabinet_objects[index]}")
         
     last_cabinet_objects = cabinet_objects
 
