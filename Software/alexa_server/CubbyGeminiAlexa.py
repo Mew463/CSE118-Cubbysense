@@ -88,18 +88,93 @@ async def handle_alexa_request(request: Request):
                     except KeyError:
                         user_actor = ""  # or set a default value
                     
-                    try: 
+                    try:
                         itemslist = fetch_items()
                     except Exception as e:
                         itemslist = ["Default list", "scissors", "pencil", "laptop", "pots", "pans", "starbucks card", "car keys", "credit card", "home keys", "passport", "cheatsheet"]
+
                     model = genai.GenerativeModel("gemini-1.5-flash")
-                    intial_prompt = "Your name is Cubby aka Flash Drive and you are an assistant at home tracking my items. A list of items will be provided."
-                    prompt = intial_prompt + ". This is context from Alexa Services: Actor: " + user_actor + ", Direction:" + user_direction + ", Location:" + user_location + ". As an assistant, give suggestions in under 2 sentences. Here is the list of items available:" + str(itemslist)
-                    response = model.generate_content(prompt)
-                    
-                    # Extract text from the response
+
+                    # Step 1: Get the initial response
+                    initial_prompt = (
+                        "Your name is Cubby aka Flash Drive, and you are an assistant at home tracking my items. "
+                        "A list of items will be provided. "
+                        "This is context from Alexa Services: Actor: "
+                        + user_actor
+                        + ", Direction: "
+                        + user_direction
+                        + ", Location: "
+                        + user_location
+                        + ". As an assistant, give suggestions in under 2 sentences. Here is the list of items in the cupboard (zero-index cupboard id): "
+                        + str(itemslist)
+                    )
+                    response = model.generate_content(initial_prompt)
+
+                    # Extract text from the first response
                     message = response.text if response.text else "Cubby did not provide a response."
-                    return build_alexa_response(f"{message}")
+
+                    # Step 2: Ask Gemini to parse and generate the LED list
+                    parse_prompt = (
+                        "Based on the following response: '"
+                        + message
+                        + "', generate a JSON list in the format to light up where items are based on the item list: "
+                        "'[{\"in_cubby\": <int>, \"status\": \"<on|off>\"}]'. "
+                        "Only include LEDs that are relevant to the response or associated with tracked items."
+                        + "Here is the list and in_cubby location of items currently available: "
+                        + str(itemslist)
+                    )
+                    parse_response = model.generate_content(parse_prompt)
+
+                    # Parse the JSON response for LEDs
+                    led_list = []
+                    print(itemslist)
+                    if parse_response and parse_response.candidates:
+                        try:
+                            import json
+                            # Extract the raw text content from the response
+                            raw_text = parse_response.candidates[0].content.parts[0].text
+
+                            #print("overall",raw_text)
+                            # Remove any formatting like ```json ... ```
+                            if raw_text.startswith("```json") and raw_text.endswith("\n```\n"):
+                                raw_text = raw_text[7:-5].strip()
+                                raw_text = raw_text
+                            
+                            # Parse the cleaned text as JSON
+                            led_list = json.loads(raw_text)
+
+                            # Ensure it's a list
+                            if not isinstance(led_list, list):
+                                led_list = []
+                        except (json.JSONDecodeError, IndexError, KeyError) as e:
+                            message += " Failed to parse LED list."
+                            led_list = []
+
+                    print(led_list)
+                    # Update LEDs based on the parsed response
+                    if led_list:
+                        for led in led_list:
+                            if "in_cubby" in led and "status" in led:
+                                # Validate LED status
+                                if led["status"] in {"on", "off", "new"}:
+                                    api_url = f"http://0.0.0.0:8081/leds/{led['in_cubby']}"
+                                    try:
+                                        import requests
+                                        response = requests.put(api_url, json={"id": led["in_cubby"]+1, "color": led["status"]})
+                                        if response.status_code == 200:
+                                            message += f" Look at cupboard LED {led['in_cubby']}."
+                                        else:
+                                            message += f" Failed to update LED {led['in_cubby']}. Response should be {led_list}."
+                                    except Exception as e:
+                                        message += f" Error updating LED {led['in_cubby']}: {str(e)}."
+                                else:
+                                    message += f" Invalid status '{led['status']}' for LED {led['in_cubby']}."
+
+                    # Return Alexa response
+                    return build_alexa_response(message)
+
+
+
                 
 
                 except Exception as e:
