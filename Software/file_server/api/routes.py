@@ -5,6 +5,7 @@ from pydantic import BaseModel
 
 from .services import ItemService, get_item_service, get_led_service, LEDService
 from db.models import ItemCreate, LEDUpdate
+import asyncio
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -62,6 +63,8 @@ async def update_led(
     led_service: LEDService = Depends(get_led_service)
 ):
     led = await led_service.update_led(id=led_data.id, color=led_data.color)
+    if (led_data.id != -1):
+        led = await led_service.update_led(id=-1, color="on") #when update, set -1 to on
     return {"led": led}
 
 @router.get("/leds")

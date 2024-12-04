@@ -1,4 +1,5 @@
 #python3 -m uvicorn CubbyGeminiAlexa:app --reload  --host 0.0.0.0 --port 8080
+#python3.11 -m uvicorn CubbyGeminiAlexa:app --reload  --host 0.0.0.0 --port 8080
 #ngrok http 8080 #
 #ngrok http --url=complete-primate-simply.ngrok-free.app 8080
 from fastapi import FastAPI, Request
@@ -8,6 +9,7 @@ import os
 from dotenv import load_dotenv
 import google.generativeai as genai
 import requests  # Add the HTTP client import
+import time
 
 # Configure the Gemini API with the API key
 # Load environment variables from .env file
@@ -117,9 +119,9 @@ async def handle_alexa_request(request: Request):
                     parse_prompt = (
                         "Based on the following response: '"
                         + message
-                        + "', generate a JSON list in the format to light up where items are based on the item list: "
+                        + "', generate a JSON list in the format to light up where items are based on the item list only: "
                         "'[{\"in_cubby\": <int>, \"status\": \"<on|off>\"}]'. "
-                        "Only include LEDs that are relevant to the response or associated with tracked items."
+                        "Include all in_cubby (range is 0 to 3) LEDs in response to the associated with tracked items, indicate off if no items."
                         + "Here is the list and in_cubby location of items currently available: "
                         + str(itemslist)
                     )
@@ -160,11 +162,13 @@ async def handle_alexa_request(request: Request):
                                     api_url = f"http://0.0.0.0:8081/leds/{led['in_cubby']}"
                                     try:
                                         import requests
+                                        print("id", led["in_cubby"]+1, "color", led["status"])
                                         response = requests.put(api_url, json={"id": led["in_cubby"]+1, "color": led["status"]})
                                         if response.status_code == 200:
-                                            message += f" Look at cupboard LED {led['in_cubby']}."
+                                            print(f"Updated cupboard {led['in_cubby']}.")
+                                            #message += f" Look at cupboard {led['in_cubby']}."
                                         else:
-                                            message += f" Failed to update LED {led['in_cubby']}. Response should be {led_list}."
+                                            message += f" Failed to update {led['in_cubby']}. Response should be {led_list}."
                                     except Exception as e:
                                         message += f" Error updating LED {led['in_cubby']}: {str(e)}."
                                 else:
@@ -172,10 +176,6 @@ async def handle_alexa_request(request: Request):
 
                     # Return Alexa response
                     return build_alexa_response(message)
-
-
-
-                
 
                 except Exception as e:
                     logger.error(f"Error contacting Gemini API: {e}")

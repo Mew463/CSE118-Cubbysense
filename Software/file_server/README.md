@@ -5,7 +5,7 @@
 To start the server, run the following command:
 
 ```bash
-cd Software/file_server && uvicorn server:app --reload
+cd Software/file_server && uvicorn server:app --reload --host 0.0.0.0 --port 8081
 ```
 
 ## Endpoints
@@ -198,7 +198,7 @@ Using SQL:
 
 ## 1. Start/Stop PostgreSQL
 ```bash
-# Start PostgreSQL (Linux/macOS)
+# Start PostgreSQL (Linux/)
 sudo systemctl start postgresql
 
 # Stop PostgreSQL
@@ -206,6 +206,11 @@ sudo systemctl stop postgresql
 
 # Check Status
 sudo systemctl status postgresql
+
+#macos:
+brew services start postgresql
+brew services stop postgresql
+brew services restart postgresql
 ```
 
 ## 2. Access PostgreSQL Command Line Interface (CLI)

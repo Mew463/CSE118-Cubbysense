@@ -21,8 +21,9 @@ def get_session():
 def seed_leds():
     with Session(engine) as session:
         # Insert the 4 leds
-        session.add(LED(color="red"))
-        session.add(LED(color="green"))
-        session.add(LED(color="blue"))
-        session.add(LED(color="yellow"))
+        session.add(LED(id =-1,color="off"))
+        session.add(LED(color="off"))
+        session.add(LED(color="off"))
+        session.add(LED(color="off"))
+        session.add(LED(color="off"))
         session.commit()

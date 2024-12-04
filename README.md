@@ -39,4 +39,13 @@ project/
 └── README.md                 # Main project documentation
 ```
 
+Ports:
+```
+--port 8080 (AlexaGemini)
+--port 8081 (FileServer)
+--port 8082 (OpenCV)
+--port 8083 (CabinetController)
+-- ssh port 8022 (public facing port)
+```
+
 In each readme, provide how to call or run your service.
