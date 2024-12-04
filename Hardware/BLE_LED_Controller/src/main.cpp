@@ -49,10 +49,10 @@ void setup() {
 void loop() {
 
   if (CubbyLED.isConnected()) {
-    fill_solid(cub1, NUM_LEDS, ModeToColor[(int)laptop_packetBuffer[0] - '0']);
-    fill_solid(cub2, NUM_LEDS, ModeToColor[(int)laptop_packetBuffer[1] - '0']);
-    fill_solid(cub3, NUM_LEDS, ModeToColor[(int)laptop_packetBuffer[2] - '0']);
-    fill_solid(cub4, NUM_LEDS, ModeToColor[(int)laptop_packetBuffer[3] - '0']);
+    fill_solid(cub1, NUM_LEDS, ModeToColor[(int)laptop_packetBuffer[1] - '0']);
+    fill_solid(cub2, NUM_LEDS, ModeToColor[(int)laptop_packetBuffer[0] - '0']);
+    fill_solid(cub3, NUM_LEDS, ModeToColor[(int)laptop_packetBuffer[3] - '0']);
+    fill_solid(cub4, NUM_LEDS, ModeToColor[(int)laptop_packetBuffer[2] - '0']);
 
   } else { // Handle not connected case
     setLeds(CRGB::Black);
