@@ -43,6 +43,14 @@ def remove_missing_object(cubby_index):
         print("Error:", response.status_code, response.text)
 
 
+for i in range(5):  # Test indices 0 through 4
+    cap = cv2.VideoCapture(i)
+    if cap.isOpened():
+        print(f"Camera index {i} is active.")
+    else:
+        print(f"Camera index {i} is not active.")
+    cap.release()
+
 yolo = YOLO("yolov8s.pt")
 cap = cv2.VideoCapture(0) # 0 for webcam and 1 for external cam 
 
@@ -87,9 +95,15 @@ while True:
                 width = x2-x1
                 height = y2-y1
                 current_objects.append(((classes_names[int(box.cls[0])]), x1 + width/2, y1 + height/2, width, height))
-                
-    bottom_left_cabinet_coords = [125, 475]
-    top_right_cabinet_coords = [475, 90]
+    # Query the width and height
+    # Multi-resolution scale
+    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    print(width,height)
+    halflength = 0.9*min(width,height)/2
+    print(int(width/2 - halflength), int(height/2 + halflength),int(width/2 + halflength),int(height/2 - halflength))
+    bottom_left_cabinet_coords = [int(width/2 - halflength), int(height/2 + halflength)]
+    top_right_cabinet_coords = [int(width/2 + halflength), int(height/2 - halflength)]
     
     cv2.rectangle(image, (bottom_left_cabinet_coords[0], bottom_left_cabinet_coords[1]), (top_right_cabinet_coords[0], top_right_cabinet_coords[1]), (255, 0, 0), 2)
     cv2.imwrite("output_yolo.jpg", image)
@@ -97,7 +111,7 @@ while True:
     # Print detected items
     # print("Detected items:", current_objects)
     
-    object_size_limit = 225
+    object_size_limit = halflength #size of the cabinet
     mid_cabinet_coords = [(top_right_cabinet_coords[0] + bottom_left_cabinet_coords[0])/2, (bottom_left_cabinet_coords[1] + top_right_cabinet_coords[1])/2]
 
     cabinet_objects = ["" for _ in cabinet_objects] # Make sure to erase the current array of cabinet_objects
