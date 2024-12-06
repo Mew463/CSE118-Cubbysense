@@ -34,7 +34,7 @@ class AlexaRequest(BaseModel):
 # Replace the hardcoded itemslist with a function to fetch items
 def fetch_items():
     try:
-        response = requests.get("http://localhost:8081/items")
+        response = requests.get("http://0.0.0.0:8081/items")
         response.raise_for_status()  # Raise an exception for HTTP errors
         return response.json()  # Assuming the API returns a JSON array
     except Exception as e:
@@ -119,9 +119,9 @@ async def handle_alexa_request(request: Request):
                     parse_prompt = (
                         "Based on the following response: '"
                         + message
-                        + "', generate a JSON list in the format to light up where items are based on the item list only: "
+                        + "', generate a JSON list in the format to light up where items are based on the item list only, look at in_cubby, ignore id: "
                         "'[{\"in_cubby\": <int>, \"status\": \"<on|off>\"}]'. "
-                        "Include all in_cubby (range is 0 to 3) LEDs in response to the associated with tracked items, indicate off if no items."
+                        "Include all in_cubby (range is 0 to 3) LEDs in response to the associated with tracked items, indicate on if you need an item, indicate off if you don't need an item from the in_cubby."
                         + "Here is the list and in_cubby location of items currently available: "
                         + str(itemslist)
                     )
